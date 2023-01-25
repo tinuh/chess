@@ -1,10 +1,13 @@
 import Head from "next/head";
+import Script from "next/script";
 import Image from "next/image";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Chess } from "chess.js";
 import { Chessboard } from "react-chessboard";
 import { GrClose } from "react-icons/gr";
 import { Square } from "react-chessboard/dist/chessboard/types";
+import { Engine } from "../utils/wukong";
+
 import {
 	FaChessBishop,
 	FaChessKnight,
@@ -38,9 +41,13 @@ export default function Home() {
 		move: { from: "a1", to: "a2" },
 	});
 
-	function makeAMove(move: Move, promote?: string) {
+	function makeAMove(move: Move, promote?: string, obj?: Chess) {
 		let temp = new Chess();
-		temp.loadPgn(game.pgn());
+		if (obj) {
+			temp = obj;
+		} else {
+			temp.loadPgn(game.pgn());
+		}
 		if (!promote) {
 			if (
 				temp.get(move.from).type === "p" &&
@@ -133,19 +140,28 @@ export default function Home() {
 				setModal((prev) => prev.filter((_, index) => index !== 0));
 			}, 5000);
 		}
-		return result;
+		return { move: result, temp: temp };
 	}
 
 	function onDrop(sourceSquare: Square, targetSquare: Square) {
-		const move = makeAMove({
+		const res = makeAMove({
 			from: sourceSquare,
 			to: targetSquare,
 			//promotion: "q", // always promote to a queen for example simplicity
 		});
 
 		// illegal move
-		if (move === null) return false;
+		if (res?.move === null) return false;
 		//make a move here
+		const engine = new (Engine() as any);
+		engine.setBoard(res?.temp.fen());
+		let rawMove = engine.search(6);
+		let strMove = engine.moveToString(rawMove);
+		let move = {
+			from: strMove.substring(0, 2),
+			to: strMove.substring(2, 4),
+		};
+		makeAMove(move, "", res?.temp);
 		return true;
 	}
 
@@ -193,6 +209,7 @@ export default function Home() {
 			</div>
 			<h1 className="text-center text-white text-5xl font-bold p-10">Chess</h1>
 			<div className="flex justify-center gap-10">
+				<div id="chessboard" className="hidden"></div>
 				<div className="w-96">
 					<Chessboard
 						position={game.fen()}
