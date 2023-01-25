@@ -8,3 +8,20 @@ body {
   font-family: 'Rubik', sans-serif;
   background-color: black;
 }
+
+/* custom scrollbar */
+@media (min-width: 768px) {
+  ::-webkit-scrollbar
+{
+  width: 8px;
+  height: 8px;
+  border-radius: 4px;
+  background-color: rgb(89, 181, 166);
+}
+
+::-webkit-scrollbar-thumb
+{
+  border-radius: 4px;
+  background-color: rgb(157, 224, 176);
+}
+}

@@ -7,6 +7,7 @@ import { Chessboard } from "react-chessboard";
 import { GrClose } from "react-icons/gr";
 import { Square } from "react-chessboard/dist/chessboard/types";
 import { Engine } from "../utils/wukong";
+import { BiBrain } from "react-icons/bi";
 
 import {
 	FaChessBishop,
@@ -31,6 +32,8 @@ export default function Home() {
 	const [game, setGame] = useState<Chess>(new Chess());
 	const [modals, setModal] = useState<Modal[]>([]);
 	const [promoting, setPromoting] = useState(false);
+	const [thinking, setThinking] = useState(false);
+	const [depth, setDepth] = useState(4);
 	const [mousePos, setMousePos] = useState<{
 		x: number;
 		y: number;
@@ -44,7 +47,7 @@ export default function Home() {
 	function makeAMove(move: Move, promote?: string, obj?: Chess) {
 		let temp = new Chess();
 		if (obj) {
-			temp = obj;
+			temp.loadPgn(obj.pgn());
 		} else {
 			temp.loadPgn(game.pgn());
 		}
@@ -143,6 +146,19 @@ export default function Home() {
 		return { move: result, temp: temp };
 	}
 
+	const aiMove = (res?: Chess) => {
+		const engine = new (Engine as any)();
+		engine.setBoard(res?.fen());
+		let rawMove = engine.search(depth);
+		let strMove = engine.moveToString(rawMove);
+		let move = {
+			from: strMove.substring(0, 2),
+			to: strMove.substring(2, 4),
+		};
+		setThinking(false);
+		makeAMove(move, "", res);
+	};
+
 	function onDrop(sourceSquare: Square, targetSquare: Square) {
 		const res = makeAMove({
 			from: sourceSquare,
@@ -153,15 +169,8 @@ export default function Home() {
 		// illegal move
 		if (res?.move === null) return false;
 		//make a move here
-		const engine = new (Engine() as any);
-		engine.setBoard(res?.temp.fen());
-		let rawMove = engine.search(6);
-		let strMove = engine.moveToString(rawMove);
-		let move = {
-			from: strMove.substring(0, 2),
-			to: strMove.substring(2, 4),
-		};
-		makeAMove(move, "", res?.temp);
+		setThinking(true);
+		setTimeout(() => aiMove(res?.temp), 200);
 		return true;
 	}
 
@@ -219,8 +228,31 @@ export default function Home() {
 						customDarkSquareStyle={{ backgroundColor: "#59b5a6" }}
 						customLightSquareStyle={{ backgroundColor: "#9de0b0" }}
 					/>
+
+					<label
+						htmlFor="minmax-range"
+						className="block mt-3 text-sm text-gray-900 dark:text-white"
+					>
+						Depth of AI (Higher Depth = More Time = More Difficult)
+					</label>
+					<input
+						id="minmax-range"
+						type="range"
+						min="1"
+						max="10"
+						value={depth}
+						onChange={(e) => setDepth(parseInt(e.target.value))}
+						className="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer dark:bg-neutral-700"
+					/>
+
+					{thinking && (
+						<p className="animate-pulse flex gap-1 text-center pt-5 justify-center items-center text-white">
+							<BiBrain />
+							AI is Thinking...
+						</p>
+					)}
 				</div>
-				<div className="flex gap-5">
+				<div className="flex gap-5 px-5 h-96 overflow-auto">
 					<div>
 						<h3 className="text-white text-xl font-semibold">White</h3>
 						<ol className="list-decimal list-inside">
