@@ -16,7 +16,7 @@ body {
   width: 8px;
   height: 8px;
   border-radius: 4px;
-  background-color: rgb(89, 181, 166);
+  background-color: black;
 }
 
 ::-webkit-scrollbar-thumb
